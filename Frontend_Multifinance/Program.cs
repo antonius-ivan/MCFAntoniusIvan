@@ -13,7 +13,7 @@ builder.Services.AddHttpClient<StorageLocationService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
 {
-    options.Filters.Add<SessionCheckFilter>(); // Register the custom action filter globally
+    options.Filters.Add<SessionCheckFilter>(); 
 });
 
 var app = builder.Build();
@@ -30,8 +30,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// Configure the HTTP request pipeline.
-app.UseSession();  // Ensure that the session middleware is added before MVC middleware
+app.UseSession();  
 
 app.UseRouting();
 

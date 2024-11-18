@@ -20,21 +20,16 @@ namespace Frontend_Multifinance.Controllers
             _httpClient = httpClientFactory.CreateClient();
         }
 
-        // Index Action to get the list of BPKB transactions
         public async Task<IActionResult> Index()
         {
-            // Fetch list of BPKB transactions
             var transactions = await GetBpkbTransactionsAsync();
 
-            // Fetch storage locations
             var storageLocations = await GetStorageLocationsAsync();
 
-            // Pass the list of storage locations to the view
             ViewBag.StorageLocations = storageLocations;
 
             return View(transactions);
         }
-        // Action to show the details of a specific BPKB transaction
         public async Task<IActionResult> Detail(string id)
         {
             if (string.IsNullOrEmpty(id))
@@ -49,7 +44,6 @@ namespace Frontend_Multifinance.Controllers
                 return NotFound();
             }
 
-            // Assuming GetStorageLocationsAsync fetches the list of storage locations
             var storageLocations = await GetStorageLocationsAsync();
 
             ViewBag.StorageLocations = storageLocations;
@@ -57,12 +51,11 @@ namespace Frontend_Multifinance.Controllers
             return View(transaction);
         }
 
-        // Fetching a specific transaction by agreement number
         private async Task<BpkbTransactionViewModel> GetBpkbTransactionByIdAsync(string id)
         {
             try
             {
-                string apiUrl = $"https://localhost:9999/api/BpkbTransaction/{id}"; // Endpoint to fetch by ID
+                string apiUrl = $"https://localhost:9999/api/BpkbTransaction/{id}"; 
 
                 var response = await _httpClient.GetAsync(apiUrl);
                 response.EnsureSuccessStatusCode();
@@ -86,116 +79,94 @@ namespace Frontend_Multifinance.Controllers
 
             try
             {
-                string apiUrl = "https://localhost:9999/api/BpkbTransaction"; // The API endpoint to fetch the list of transactions
+                string apiUrl = "https://localhost:9999/api/BpkbTransaction"; 
 
-                // Send GET request to fetch the list
                 var response = await _httpClient.GetAsync(apiUrl);
                 response.EnsureSuccessStatusCode();
 
-                // Deserialize JSON response into a list of BpkbTransactionViewModel objects
                 var responseBody = await response.Content.ReadAsStringAsync();
                 transactions = JsonSerializer.Deserialize<List<BpkbTransactionViewModel>>(responseBody);
             }
             catch (Exception ex)
             {
-                // Log the error (you can replace this with proper logging)
                 Console.WriteLine($"Error fetching transactions: {ex.Message}");
             }
 
             return transactions;
         }
 
-        // Action to display the Upsert form
-        // Consolidating both methods into one
         public async Task<IActionResult> Upsert(string id)
         {
             BpkbTransactionViewModel model = new BpkbTransactionViewModel();
 
             if (!string.IsNullOrEmpty(id))
             {
-                // Fetch the existing transaction data from the API if 'id' is provided
                 model = await _httpClient.GetFromJsonAsync<BpkbTransactionViewModel>($"https://localhost:9999/api/BpkbTransaction/{id}");
             }
             else
             {
-                // If no id is provided, you can initialize the model for a new transaction (if needed).
                 var newAgreementNumber = await GenerateNewAgreementNumberAsync();
                 model.agreement_number = newAgreementNumber;
             }
 
-            // Fetch storage locations for the dropdown list in the form
             var storageLocations = await GetStorageLocationsAsync();
             ViewBag.StorageLocations = storageLocations;
 
-            // Pass the model (either fetched or a new one) to the view
             return View(model);
         }
 
         [HttpPost]
         public async Task<IActionResult> Upsert(BpkbTransactionViewModel model)
         {
-            // Ensure the model is valid before proceeding
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Check if the agreement_number exists in the database by making a GET request
                     var response = await _httpClient.GetAsync($"https://localhost:9999/api/BpkbTransaction/{model.agreement_number}");
 
                     if (response.IsSuccessStatusCode)
                     {
-                        // Transaction exists, update it using a PUT request
                         var updateResponse = await _httpClient.PutAsJsonAsync($"https://localhost:9999/api/BpkbTransaction/{model.agreement_number}", model);
 
                         if (updateResponse.IsSuccessStatusCode)
                         {
-                            // Redirect to the Index action after successful update
                             return RedirectToAction("Index");
                         }
                         else
                         {
-                            // Handle failed update, show an error message
                             ModelState.AddModelError("", "Failed to update the transaction. Please try again.");
                         }
                     }
                     else if (response.StatusCode == HttpStatusCode.NotFound)
                     {
-                        // If the transaction is not found, create a new one using POST request
                         var createResponse = await _httpClient.PostAsJsonAsync("https://localhost:9999/api/BpkbTransaction", model);
 
                         if (createResponse.IsSuccessStatusCode)
                         {
-                            // Redirect to the Index action after successful creation
                             return RedirectToAction("Index");
                         }
                         else
                         {
-                            // Handle failed creation, show an error message
                             ModelState.AddModelError("", "Failed to create the transaction. Please try again.");
                         }
                     }
                     else
                     {
-                        // Handle unexpected responses (e.g., server error, etc.)
                         ModelState.AddModelError("", "An error occurred while processing your request.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception and add an error to the ModelState
                     Console.WriteLine($"Error: {ex.Message}");
                     ModelState.AddModelError("", "An unexpected error occurred.");
                 }
             }
 
-            // If validation fails or there's an error, return the view with the model
             return View(model);
         }
 
-        // Example method to fetch the transaction details by agreement number
         private async Task<BpkbTransactionViewModel> GetTransactionByAgreementNumberAsync(string agreementNumber)
         {
-            // Replace this with your actual method to get the transaction details from a database or API
             return new BpkbTransactionViewModel
             {
                 agreement_number = agreementNumber,
@@ -214,18 +185,14 @@ namespace Frontend_Multifinance.Controllers
             var storageLocations = new List<SelectListItem>();
             try
             {
-                // API endpoint
                 string apiUrl = "https://localhost:9999/api/StorageLocation";
 
-                // Send GET request to fetch data
                 var response = await _httpClient.GetAsync(apiUrl);
                 response.EnsureSuccessStatusCode();
 
-                // Deserialize JSON response into a list of objects
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var locations = JsonSerializer.Deserialize<List<StorageLocationViewModel>>(responseBody);
 
-                // Map the response to a list of SelectListItem
                 if (locations != null)
                 {
                     foreach (var location in locations)
@@ -240,20 +207,16 @@ namespace Frontend_Multifinance.Controllers
             }
             catch (Exception ex)
             {
-                // Log error (you can replace this with proper logging)
                 Console.WriteLine($"Error fetching storage locations: {ex.Message}");
             }
 
             return storageLocations;
         }
 
-        // Method to generate a new agreement number
         private async Task<string> GenerateNewAgreementNumberAsync()
         {
-            // This logic assumes the latest agreement number is retrieved from the database and incremented
             var lastTransaction = await GetLastTransactionAsync();
 
-            // Assuming agreement_number is numeric and we increment it
             int newAgreementNumber = 0;
             if (lastTransaction != null && int.TryParse(lastTransaction.agreement_number, out newAgreementNumber))
             {
@@ -261,14 +224,12 @@ namespace Frontend_Multifinance.Controllers
             }
             else
             {
-                // Default to some starting number if no previous transactions exist
                 newAgreementNumber = 1151500001;
             }
 
             return newAgreementNumber.ToString();
         }
 
-        // Fetch the latest transaction to generate a new agreement number
         private async Task<BpkbTransactionViewModel> GetLastTransactionAsync()
         {
             var transactions = await GetBpkbTransactionsAsync();
