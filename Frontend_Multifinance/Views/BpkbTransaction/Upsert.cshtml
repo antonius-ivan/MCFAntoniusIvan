@@ -1,4 +1,5 @@
 ﻿@model Frontend_Multifinance.Models.BpkbTransactionViewModel
+
 @{
     var storageLocations = ViewBag.StorageLocations as List<SelectListItem>;
 }
@@ -14,56 +15,56 @@
     </div>
 
     <div>
-        <label for="AgreementNumber">Agreement Number</label>
-        <input type="text" id="agreement_number" name="AgreementNumber" asp-for="agreement_number" class="form-control" />
+        <label for="agreement_number">Agreement Number</label>
+        <input type="text" id="agreement_number" asp-for="agreement_number" class="form-control" readonly />
         @Html.ValidationMessageFor(model => model.agreement_number, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="BranchId">Branch Id</label>
-        <input type="text" id="branch_id" name="BranchId" asp-for="branch_id" class="form-control" />
+        <label for="branch_id">Branch Id</label>
+        <input type="text" id="branch_id" asp-for="branch_id" class="form-control" />
         @Html.ValidationMessageFor(model => model.branch_id, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="BpkbNo">No. BPKB</label>
-        <input type="text" id="bpkb_no" name="BpkbNo" asp-for="bpkb_no" class="form-control" />
+        <label for="bpkb_no">No. BPKB</label>
+        <input type="text" id="bpkb_no" asp-for="bpkb_no" class="form-control" />
         @Html.ValidationMessageFor(model => model.bpkb_no, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="BpkbDateIn">Tanggal BPKB In</label>
-        <input type="date" id="bpkb_date_in" name="BpkbDateIn" asp-for="bpkb_date_in" class="form-control" />
+        <label for="bpkb_date_in">Tanggal BPKB In</label>
+        <input type="date" id="bpkb_date_in" asp-for="bpkb_date_in" class="form-control" />
         @Html.ValidationMessageFor(model => model.bpkb_date_in, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="BpkbDate">Tanggal BPKB</label>
-        <input type="date" id="bpkb_date" name="BpkbDate" asp-for="bpkb_date" class="form-control" />
+        <label for="bpkb_date">Tanggal BPKB</label>
+        <input type="date" id="bpkb_date" asp-for="bpkb_date" class="form-control" />
         @Html.ValidationMessageFor(model => model.bpkb_date, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="FakturNo">No. Faktur</label>
-        <input type="text" id="faktur_no" name="FakturNo" asp-for="faktur_no" class="form-control" />
+        <label for="faktur_no">No. Faktur</label>
+        <input type="text" id="faktur_no" asp-for="faktur_no" class="form-control" />
         @Html.ValidationMessageFor(model => model.faktur_no, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="FakturDate">Tanggal Faktur</label>
-        <input type="date" id="faktur_date" name="FakturDate" asp-for="faktur_date" class="form-control" />
+        <label for="faktur_date">Tanggal Faktur</label>
+        <input type="date" id="faktur_date" asp-for="faktur_date" class="form-control" />
         @Html.ValidationMessageFor(model => model.faktur_date, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="PoliceNo">Nomor Polisi</label>
-        <input type="text" id="police_no" name="PoliceNo" asp-for="police_no" class="form-control" />
+        <label for="police_no">Nomor Polisi</label>
+        <input type="text" id="police_no" asp-for="police_no" class="form-control" />
         @Html.ValidationMessageFor(model => model.police_no, "", new { @class = "text-danger" })
     </div>
 
     <div>
-        <label for="LocationId">Lokasi Penyimpanan</label>
-        <select id="location_id" name="LocationId" asp-for="location_id" class="form-control">
+        <label for="location_id">Lokasi Penyimpanan</label>
+        <select id="location_id" asp-for="location_id" class="form-control">
             <option value="">-- Select Location --</option>
             @if (storageLocations != null && storageLocations.Any())
             {

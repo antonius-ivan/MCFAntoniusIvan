@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -22,12 +23,62 @@ namespace Frontend_Multifinance.Controllers
         // Index Action to get the list of BPKB transactions
         public async Task<IActionResult> Index()
         {
-            // Fetch the list of BPKB transactions from the API
+            // Fetch list of BPKB transactions
             var transactions = await GetBpkbTransactionsAsync();
 
-            // Pass the transactions to the view as the model
+            // Fetch storage locations
+            var storageLocations = await GetStorageLocationsAsync();
+
+            // Pass the list of storage locations to the view
+            ViewBag.StorageLocations = storageLocations;
+
             return View(transactions);
         }
+        // Action to show the details of a specific BPKB transaction
+        public async Task<IActionResult> Detail(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return NotFound();
+            }
+
+            var transaction = await GetBpkbTransactionByIdAsync(id);
+
+            if (transaction == null)
+            {
+                return NotFound();
+            }
+
+            // Assuming GetStorageLocationsAsync fetches the list of storage locations
+            var storageLocations = await GetStorageLocationsAsync();
+
+            ViewBag.StorageLocations = storageLocations;
+
+            return View(transaction);
+        }
+
+        // Fetching a specific transaction by agreement number
+        private async Task<BpkbTransactionViewModel> GetBpkbTransactionByIdAsync(string id)
+        {
+            try
+            {
+                string apiUrl = $"https://localhost:9999/api/BpkbTransaction/{id}"; // Endpoint to fetch by ID
+
+                var response = await _httpClient.GetAsync(apiUrl);
+                response.EnsureSuccessStatusCode();
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var transaction = JsonSerializer.Deserialize<BpkbTransactionViewModel>(responseBody);
+
+                return transaction;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching transaction details: {ex.Message}");
+                return null;
+            }
+        }
+
 
         private async Task<List<BpkbTransactionViewModel>> GetBpkbTransactionsAsync()
         {
@@ -54,54 +105,108 @@ namespace Frontend_Multifinance.Controllers
             return transactions;
         }
 
-        public async Task<IActionResult> Upsert()
+        // Action to display the Upsert form
+        // Consolidating both methods into one
+        public async Task<IActionResult> Upsert(string id)
         {
-            // Fetch storage locations from the API
-            var storageLocations = await GetStorageLocationsAsync();
+            BpkbTransactionViewModel model = new BpkbTransactionViewModel();
 
-            // Pass the locations to the View using ViewBag
+            if (!string.IsNullOrEmpty(id))
+            {
+                // Fetch the existing transaction data from the API if 'id' is provided
+                model = await _httpClient.GetFromJsonAsync<BpkbTransactionViewModel>($"https://localhost:9999/api/BpkbTransaction/{id}");
+            }
+            else
+            {
+                // If no id is provided, you can initialize the model for a new transaction (if needed).
+                var newAgreementNumber = await GenerateNewAgreementNumberAsync();
+                model.agreement_number = newAgreementNumber;
+            }
+
+            // Fetch storage locations for the dropdown list in the form
+            var storageLocations = await GetStorageLocationsAsync();
             ViewBag.StorageLocations = storageLocations;
 
-            return View();
+            // Pass the model (either fetched or a new one) to the view
+            return View(model);
         }
 
         [HttpPost]
         public async Task<IActionResult> Upsert(BpkbTransactionViewModel model)
         {
+            // Ensure the model is valid before proceeding
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Prepare data for API request
-                    var jsonContent = JsonSerializer.Serialize(model);
-                    var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                    // API endpoint for saving/updating
-                    string apiUrl = "https://localhost:9999/api/BpkbTransaction";
-
-                    // Send POST request to save the data
-                    var response = await _httpClient.PostAsync(apiUrl, httpContent);
+                    // Check if the agreement_number exists in the database by making a GET request
+                    var response = await _httpClient.GetAsync($"https://localhost:9999/api/BpkbTransaction/{model.agreement_number}");
 
                     if (response.IsSuccessStatusCode)
                     {
-                        // Redirect to success page or list view after saving
-                        return RedirectToAction("Index");
+                        // Transaction exists, update it using a PUT request
+                        var updateResponse = await _httpClient.PutAsJsonAsync($"https://localhost:9999/api/BpkbTransaction/{model.agreement_number}", model);
+
+                        if (updateResponse.IsSuccessStatusCode)
+                        {
+                            // Redirect to the Index action after successful update
+                            return RedirectToAction("Index");
+                        }
+                        else
+                        {
+                            // Handle failed update, show an error message
+                            ModelState.AddModelError("", "Failed to update the transaction. Please try again.");
+                        }
+                    }
+                    else if (response.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        // If the transaction is not found, create a new one using POST request
+                        var createResponse = await _httpClient.PostAsJsonAsync("https://localhost:9999/api/BpkbTransaction", model);
+
+                        if (createResponse.IsSuccessStatusCode)
+                        {
+                            // Redirect to the Index action after successful creation
+                            return RedirectToAction("Index");
+                        }
+                        else
+                        {
+                            // Handle failed creation, show an error message
+                            ModelState.AddModelError("", "Failed to create the transaction. Please try again.");
+                        }
                     }
                     else
                     {
-                        ModelState.AddModelError("", "Failed to save the data. Please try again.");
+                        // Handle unexpected responses (e.g., server error, etc.)
+                        ModelState.AddModelError("", "An error occurred while processing your request.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception (replace with proper logging)
-                    Console.WriteLine($"Error while saving data: {ex.Message}");
+                    // Log the exception and add an error to the ModelState
+                    Console.WriteLine($"Error: {ex.Message}");
                     ModelState.AddModelError("", "An unexpected error occurred.");
                 }
             }
 
-            // Return the view with validation errors
+            // If validation fails or there's an error, return the view with the model
             return View(model);
+        }
+
+        // Example method to fetch the transaction details by agreement number
+        private async Task<BpkbTransactionViewModel> GetTransactionByAgreementNumberAsync(string agreementNumber)
+        {
+            // Replace this with your actual method to get the transaction details from a database or API
+            return new BpkbTransactionViewModel
+            {
+                agreement_number = agreementNumber,
+                bpkb_no = "BPKB12345",
+                branch_id = "Branch1",
+                bpkb_date = DateTime.Now,
+                faktur_no = "Faktur12345",
+                faktur_date = DateTime.Now,
+                location_id = "1",
+                police_no = "XYZ123"
+            };
         }
 
         private async Task<List<SelectListItem>> GetStorageLocationsAsync()
@@ -140,6 +245,34 @@ namespace Frontend_Multifinance.Controllers
             }
 
             return storageLocations;
+        }
+
+        // Method to generate a new agreement number
+        private async Task<string> GenerateNewAgreementNumberAsync()
+        {
+            // This logic assumes the latest agreement number is retrieved from the database and incremented
+            var lastTransaction = await GetLastTransactionAsync();
+
+            // Assuming agreement_number is numeric and we increment it
+            int newAgreementNumber = 0;
+            if (lastTransaction != null && int.TryParse(lastTransaction.agreement_number, out newAgreementNumber))
+            {
+                newAgreementNumber++;
+            }
+            else
+            {
+                // Default to some starting number if no previous transactions exist
+                newAgreementNumber = 1151500001;
+            }
+
+            return newAgreementNumber.ToString();
+        }
+
+        // Fetch the latest transaction to generate a new agreement number
+        private async Task<BpkbTransactionViewModel> GetLastTransactionAsync()
+        {
+            var transactions = await GetBpkbTransactionsAsync();
+            return transactions?.OrderByDescending(t => t.agreement_number).FirstOrDefault();
         }
     }
 }

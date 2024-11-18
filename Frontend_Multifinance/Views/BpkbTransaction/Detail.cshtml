@@ -1,0 +1,24 @@
+﻿@model Frontend_Multifinance.Models.BpkbTransactionViewModel
+@{
+    ViewData["Title"] = "BPKB Transaction Detail";
+    var storageLocations = ViewBag.StorageLocations as List<SelectListItem>;
+    var locationName = storageLocations?.FirstOrDefault(l => l.Value == Model.location_id)?.Text ?? "Unknown Location";
+}
+
+<h2>BPKB Transaction Detail</h2>
+
+<div>
+    <h4>Agreement Number: @Model.agreement_number</h4>
+    <p><strong>BPKB No:</strong> @Model.bpkb_no</p>
+    <p><strong>Branch ID:</strong> @Model.branch_id</p>
+    <p><strong>BPKB Date:</strong> @(Model.bpkb_date?.ToString("dd/MM/yyyy") ?? "")</p>
+    <p><strong>Faktur No:</strong> @Model.faktur_no</p>
+    <p><strong>Faktur Date:</strong> @(Model.faktur_date?.ToString("dd/MM/yyyy") ?? "")</p>
+    <p><strong>Location:</strong> @locationName</p>  <!-- Display the readable location name -->
+    <p><strong>Police No:</strong> @Model.police_no</p>
+    <p><strong>BPKB Date In:</strong> @(Model.bpkb_date_in?.ToString("dd/MM/yyyy") ?? "")</p>
+
+    <!-- Optionally, add other fields from your model -->
+    <!-- Back Button -->
+    <a href="@Url.Action("Index", "BpkbTransaction")" class="btn btn-secondary">Back to List</a>
+</div>
