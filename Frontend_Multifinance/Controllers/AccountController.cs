@@ -35,12 +35,12 @@ namespace Frontend_Multifinance.Controllers
                 );
 
                 // Send POST request to backend API
-                var response = await _httpClient.PostAsync("https://localhost:9999/api/authenticate", jsonContent);
+                var response = await _httpClient.PostAsync("https://localhost:9999/api/MsUser/login", jsonContent);
 
                 if (response.IsSuccessStatusCode)
                 {
                     // Authentication successful, redirect to the Home page
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Upsert", "BpkbTransaction");
                 }
                 else
                 {

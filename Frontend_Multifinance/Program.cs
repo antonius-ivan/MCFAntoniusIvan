@@ -1,5 +1,9 @@
+using Frontend_Multifinance.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddHttpClient<StorageLocationService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

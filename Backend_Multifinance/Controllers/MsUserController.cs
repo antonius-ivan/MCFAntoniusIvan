@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Backend_Multifinance.Data;
+using Backend_Multifinance.Models.MasterDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Backend_Multifinance.Data;
-using Backend_Multifinance.Models.MasterDB;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Backend_Multifinance.Controllers
 {
@@ -19,81 +18,38 @@ namespace Backend_Multifinance.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ms_user>>> GetMsUsers()
+        [HttpPost("login")]
+        public async Task<ActionResult<ms_user>> Login([FromBody] LoginModel loginModel)
         {
-            return await _context.ms_users.ToListAsync();
-        }
+            var msUser = await _context.ms_users
+                .FirstOrDefaultAsync(u => u.user_name == loginModel.Username);
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ms_user>> GetMsUser(long id)
-        {
-            var msUser = await _context.ms_users.FindAsync(id);
-
-            if (msUser == null)
+            if (msUser == null || !VerifyPassword(msUser.password, loginModel.Password))
             {
-                return NotFound();
+                return Unauthorized();
             }
 
-            return msUser;
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<ms_user>> PostMsUser(ms_user msUser)
-        {
-            _context.ms_users.Add(msUser);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetMsUser), new { id = msUser.user_id }, msUser);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutMsUser(long id, ms_user msUser)
-        {
-            if (id != msUser.user_id)
+            if (msUser.is_active != true)
             {
-                return BadRequest();
+                return Forbid();
             }
 
-            _context.Entry(msUser).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MsUserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return Ok(msUser);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMsUser(long id)
+        private bool VerifyPassword(string storedPassword, string enteredPassword)
         {
-            var msUser = await _context.ms_users.FindAsync(id);
-            if (msUser == null)
+            using (var sha256 = SHA256.Create())
             {
-                return NotFound();
+                var enteredPasswordHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(enteredPassword)));
+                return storedPassword == enteredPassword;//enteredPasswordHash;
             }
-
-            _context.ms_users.Remove(msUser);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
+    }
 
-        private bool MsUserExists(long id)
-        {
-            return _context.ms_users.Any(e => e.user_id == id);
-        }
+    public class LoginModel
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 }

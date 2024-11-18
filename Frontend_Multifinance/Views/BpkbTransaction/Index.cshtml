@@ -1,0 +1,47 @@
+﻿@model List<Frontend_Multifinance.Models.BpkbTransactionViewModel>
+
+@{
+    ViewData["Title"] = "BPKB Transactions";
+}
+
+<h2>BPKB Transactions</h2>
+
+<p>Below are the BPKB transactions:</p>
+
+@if (Model != null && Model.Any())
+{
+    <!-- Table to display BPKB Transactions -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Agreement Number</th>
+                <th>BPKB No</th>
+                <th>Branch Id</th>
+                <th>BPKB Date</th>
+                <th>Faktur No</th>
+                <th>Faktur Date</th>
+                <th>Location</th>
+                <th>Police No</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in Model)
+            {
+                <tr>
+                    <td>@transaction.agreement_number</td>
+                    <td>@transaction.bpkb_no</td>
+                    <td>@transaction.branch_id</td>
+                    <td>@(transaction.bpkb_date?.ToString("dd/MM/yyyy") ?? "")</td>
+                    <td>@transaction.faktur_no</td>
+                    <td>@(transaction.faktur_date?.ToString("dd/MM/yyyy") ?? "")</td>
+                    <td>@transaction.location_id</td>
+                    <td>@transaction.police_no</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No BPKB transactions found.</p>
+}
