@@ -81,8 +81,10 @@
         @Html.ValidationMessageFor(model => model.location_id, "", new { @class = "text-danger" })
     </div>
 
+
     <div>
         <button type="submit" class="btn btn-primary">Submit</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
 

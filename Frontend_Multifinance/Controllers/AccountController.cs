@@ -39,7 +39,16 @@ namespace Frontend_Multifinance.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Authentication successful, redirect to the Home page
+                    // Authentication successful, read the response data (e.g., user details)
+                    var userData = await response.Content.ReadAsStringAsync();
+
+                    // You can optionally deserialize the response into an object if needed
+                    // var user = JsonSerializer.Deserialize<User>(userData);
+
+                    // Store user data in the session
+                    HttpContext.Session.SetString("UserData", userData);
+
+                    // Redirect to the Upsert page
                     return RedirectToAction("Upsert", "BpkbTransaction");
                 }
                 else
