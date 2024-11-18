@@ -1,3 +1,4 @@
+using Frontend_Multifinance.Filters;
 using Frontend_Multifinance.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,10 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddHttpClient<StorageLocationService>();
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<SessionCheckFilter>(); // Register the custom action filter globally
+});
 
 var app = builder.Build();
 
